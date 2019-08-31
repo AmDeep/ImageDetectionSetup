@@ -1,0 +1,230 @@
+---
+title: "Image Analysis"
+author: "Amardeep Singh"
+date: "June 1, 2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+```
+```{r}
+install.packages("openxlsx")
+install.packages("xlsx")
+```
+```{r}
+setwd("C:\\Users\\Amardeep\\Downloads")
+dt <- read.csv(file="C:\\Users\\Amardeep\\Downloads\\PDTST.csv",header = TRUE)
+```
+```{r}
+install.packages("plotly")
+```
+```{r}
+p <- plot_ly(dt, x = dt$CD2....km.2., y = dt$CD1....km.2., type = 'scatter', mode = 'lines')
+p
+```
+```{r}
+install.packages("devtools")
+```
+```{r}
+img_dir <- "C:/Users/Amardeep/Desktop/INTERNSHIP/data/JPEDImages"
+annot_file <- "C:/Users/Amardeep/Desktop/INTERNSHIP/data/pascal_train2007.json"
+```
+```{r}
+install.packages("keras")
+```
+```{r}
+x<-c(1,5,8,7,9,11)
+y<-c(5,7,8,9,2,56)
+z=lm(formula=(x*y)~(y**y))
+z
+```
+```{r}
+install.packages("rjson")
+install.packages("magick")
+```
+```{r}
+library(keras)
+library(rjson)
+library(magick)
+library(purrr)
+library(tibble)
+library(tidyr)
+library(dplyr)
+library(ggplot2)
+library(stringr)
+```
+```{r}
+install.packages("image.libfacedetection", repos = "https://bnosac.github.io/drat")
+```
+```{r}
+source("http://bioconductor.org/biocLite.R")
+biocLite("EBImage")
+```
+
+```{r}
+library(image.libfacedetection)
+image <- image_read("https://i.udemycdn.com/course/750x422/423092_8d65_3.jpg")
+faces <- image_detect_faces(image)
+faces
+plot(faces, image, border = "red", lwd = 7, col = "white")
+allfaces <- Map(
+    x      = faces$detections$x,
+    y      = faces$detections$y,
+    width  = faces$detections$width,
+    height = faces$detections$height,
+    f = function(x, y, width, height){
+      image_crop(image, geometry_area(x = x, y = y, width = width, height = height))
+    })
+allfaces <- do.call(c, allfaces)
+allfaces
+```
+```[[{r}
+rnorm(100, mean = 15, sd = 0.15)    
+```
+```{r}
+install.packages("OpenImageR")
+```
+```{r}
+im = readImage("C:\\Users\\Amardeep\\Desktop\\INTERNSHIP\\data\\JPEGImages\\000020.jpg")
+
+edsc = edge_detection(im, method = 'Scharr', conv_mode = 'same')
+
+imageShow(edsc)
+thr = image_thresholding(im, thresh = 0.5)
+
+imageShow(thr)
+```
+```{r}
+image = im * 255
+
+hog = HOG(image, cells = 3, orientations = 6)
+hog
+```
+
+```{r}
+annotations <- fromJSON(file = annot_file)
+str(annotations, max.level = 1)
+```
+```{r}
+imageinfo <- annotations$images %>% {
+  tibble(
+    id = map_dbl(., "id"),
+    file_name = map_chr(., "file_name"),
+    image_height = map_dbl(., "height"),
+    image_width = map_dbl(., "width")
+  )
+}
+```
+```{r}
+classes <- c(
+  "aeroplane",
+  "bicycle",
+  "bird",
+  "boat",
+  "bottle",
+  "bus",
+  "car",
+  "cat",
+  "chair",
+  "cow",
+  "diningtable",
+  "dog",
+  "horse",
+  "motorbike",
+  "person",
+  "pottedplant",
+  "sheep",
+  "sofa",
+  "train",
+  "tvmonitor"
+)
+
+boxinfo <- annotations$annotations %>% {
+  tibble(
+    image_id = map_dbl(., "image_id"),
+    category_id = map_dbl(., "category_id"),
+    bbox = map(., "bbox")
+  )
+}
+```
+```{r}
+boxinfo <- boxinfo %>% 
+  mutate(bbox = unlist(map(.$bbox, function(x) paste(x, collapse = " "))))
+boxinfo <- boxinfo %>% 
+  separate(bbox, into = c("x_left", "y_top", "bbox_width", "bbox_height"))
+boxinfo <- boxinfo %>% mutate_all(as.numeric)
+boxinfo <- boxinfo %>% 
+  mutate(y_bottom = y_top + bbox_height - 1, x_right = x_left + bbox_width - 1)
+catinfo <- annotations$categories %>%  {
+  tibble(id = map_dbl(., "id"), name = map_chr(., "name"))
+}
+imageinfo <- imageinfo %>%
+  inner_join(boxinfo, by = c("id" = "image_id")) %>%
+  inner_join(catinfo, by = c("category_id" = "id"))
+```
+```{r}
+target_height <- 224
+target_width <- 224
+
+imageinfo <- imageinfo %>% mutate(
+  x_left_scaled = (x_left / image_width * target_width) %>% round(),
+  x_right_scaled = (x_right / image_width * target_width) %>% round(),
+  y_top_scaled = (y_top / image_height * target_height) %>% round(),
+  y_bottom_scaled = (y_bottom / image_height * target_height) %>% round(),
+  bbox_width_scaled =  (bbox_width / image_width * target_width) %>% round(),
+  bbox_height_scaled = (bbox_height / image_height * target_height) %>% round()
+)
+```
+```{r}
+img_data <- imageinfo[4,]
+img <- image_read(file.path(img_dir, img_data$file_name))
+img <- image_draw(img)
+rect(
+  img_data$x_left,
+  img_data$y_bottom,
+  img_data$x_right,
+  img_data$y_top,
+  border = "white",
+  lwd = 2
+)
+text(
+  img_data$x_left,
+  img_data$y_top,
+  img_data$name,
+  offset = 1,
+  pos = 2,
+  cex = 1.5,
+  col = "white"
+)
+dev.off()
+```
+```{r}
+feature_extractor <-
+  application_xception(
+    include_top = FALSE,
+    input_shape = c(224, 224, 3),
+    pooling = "avg"
+)
+
+feature_extractor %>% freeze_weights()
+```
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
