@@ -1,0 +1,139 @@
+SENTIMENT ANALYSIS FOR NUCLEAR INDUSTRIES
+
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+The knitr package is added to allow for the documents to be drafted or 'knitted' in HTML and PDF formats as well as Document file formats.  
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+```
+The tm package is installed from the library to implement text mining capabilities
+```{r}
+install.packages("glue")
+```
+```{r}
+x<-matrix(c(1,5,6,7,8,5,4,5,6), nrow = 3, ncol = 3)
+x
+y<-c(2:5)
+```
+```{r}
+install.packages("tm")
+```
+An R interface to the C libstemmer library that implements Porter's word stemming algorithm for collapsing words to a common root to aid comparison of vocabulary. Currently supported languages are Danish, Dutch, English, Finnish, French, German, Hungarian, Italian, Norwegian, Portuguese, Romanian, Russian, Spanish, Swedish and Turkish.
+```{r}
+install.packages("SnowballC")
+```
+As named the wordcloud package is used to create wordclouds using conditional formatting and the ggplot2 package helps in creating beautiful visuals. 
+```{r}
+install.packages("wordcloud")
+install.packages("ggplot2")
+```
+The file path to the text is uploaded as a directory from its location in the hardrive.
+```{r}
+cname <- file.path("C:\\Users\\Amardeep\\Downloads", "TEXT")   
+cname   
+dir(cname)   
+```
+The library is loaded and the document is converted to a text format and then a corpus which treats the text content as a matrix. The summary function shows the summary of the texts in the folder. 
+```{r}
+library(tm)
+docs <- VCorpus(DirSource(cname))   
+summary(docs) 
+```
+```{r}
+docs <- tm_map(docs, removeWords, stopwords('english'))
+```
+
+```{r}
+install.packages("quanteda")
+```
+```{r}
+library(stringr)
+dataset <- fileText
+
+length(dataset[which(dataset=="abide")])
+length(dataset[which(dataset=="abide")])
+length(dataset[which(dataset=="abide")])
+
+```
+```{r}
+files <- list.files("C:\\Users\\Amardeep\\Downloads\\TEXT")
+fileName <- glue("C:\\Users\\Amardeep\\Downloads\\TEXT\\", files, sep = "")
+fileName <- trimws(fileName)
+fileText <- glue(read_file(fileName))
+tokens <- data_frame(text = fileText) %>% unnest_tokens(word, text)
+tokens %>%
+  inner_join(get_sentiments("bing")) %>% # pull out only sentiment words
+  count(sentiment) %>% # count the # of positive & negative words
+  spread(sentiment, n, fill = 0) %>% # made data wide rather than narrow
+  mutate(sentiment = positive - negative) # # of positive words - # of negative owrds
+``` 
+```{r}
+SentimentAnalysis::analyzeSentiment(dtm)
+``` 
+```{r}
+install.packages("tidyverse")
+install.packages("tidytext")
+install.packages("glue")
+install.packages("stringr")
+```
+```{r}
+dtm <- TermDocumentMatrix(docs)
+m <- as.matrix(dtm)
+v <- sort(rowSums(m),decreasing=TRUE)
+d <- data.frame(word = names(v),freq=v)
+head(d, 10)
+```
+```{r}
+set.seed(1234)
+wordcloud(words = d$word, freq = d$freq, min.freq = 1,
+          max.words=200, random.order=FALSE, rot.per=0.35, 
+          colors=brewer.pal(8, "Dark2"))
+```
+```{r}
+install.packages("SentimentAnalysis")
+```
+```{r}
+library("tidyverse")
+library("tidytext")
+library("glue")
+library("stringr")
+```
+
+```{r}
+install.packages("readr")
+```
+
+```{r}
+inspect(docs[1])
+writeLines(as.character(docs[1]))
+```
+
+```{r}
+doc <- tm_map(doc, removePunctuation)
+doc <- tm_map(doc, removeNumbers)
+doc <- tm_map(doc, tolower)
+doc <- tm_map(doc, removeWords, stopwords("english"))
+doc <- tm_map(doc, stripWhitespace)
+library(SnowballC)
+doc <- tm_map(doc, stemDocument)
+```
+The result of the processed document is saved as a document matrix. 
+```{r}
+doc <- tm_map(docs, PlainTextDocument)
+dtm<- DocumentTermMatrix(doc)
+dtm
+```
+General data of the text matrix such as unique words and sparsity are obtained using the command below.
+```{r}
+tdm <- TermDocumentMatrix(doc)   
+tdm   
+```
+```{r}
+install.packages("qdap")
+```   
+
+
+
